@@ -14,7 +14,7 @@ function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
   const user = users.find((user) => user.username === username);
   if (!user) {
-    return response.status(400).json({ error: "User not found!" });
+    return response.status(404).json({ error: "User not found!" });
   }
   request.user = user;
   return next();
@@ -26,7 +26,7 @@ function checksExistsToDos(request, response, next) {
 
   const todo = user.todos.find((todo) => todo.id === id);
   if (!todo) {
-    return response.status(400).send({ error: "ID Not Found!" });
+    return response.status(404).send({ error: "ID Not Found!" });
   }
 
   request.todo = todo;
@@ -35,14 +35,21 @@ function checksExistsToDos(request, response, next) {
 
 app.post("/users", (request, response) => {
   const { name, username } = request.body;
-  const newUser = {
-    id: uuidv4(),
-    name: name,
-    username: username,
-    todos: [],
-  };
-  users.push(newUser);
-  return response.status(200).send("Usuário Criado");
+
+  const usernameAlreadyExist = users.some((user) => user.username == username);
+
+  if (usernameAlreadyExist) {
+    return response.status(400).json({ error: "User already exists" });
+  } else {
+    const newUser = {
+      id: uuidv4(),
+      name: name,
+      username: username,
+      todos: [],
+    };
+    users.push(newUser);
+    return response.status(200).send(newUser);
+  }
 });
 
 app.get("/users", (request, response) => {
@@ -82,7 +89,7 @@ app.put(
     todo.title = title;
     todo.deadline = deadline;
 
-    return response.status(201).send("Todo Atualizado");
+    return response.status(201).send(todo);
   }
 );
 
@@ -94,7 +101,7 @@ app.patch(
     const { todo } = request;
 
     todo.done = true;
-    return response.status(201).send("Tarefa Finalizada");
+    return response.status(201).send(todo);
   }
 );
 app.delete(
@@ -106,7 +113,7 @@ app.delete(
     const { todo } = request;
 
     user.todos.splice(todo, 1);
-    return response.status(201).send("Todo Excluído");
+    return response.status(204).json();
   }
 );
 
